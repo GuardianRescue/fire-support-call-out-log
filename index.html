@@ -148,7 +148,7 @@ let db;try{db=initializeFirestore(fbApp,{localCache:persistentLocalCache({tabMan
 
 /* ---------- state ---------- */
 const state={user:null,calls:[],view:'call',authMode:'login',authErr:'',month:monthKey(Date.now()),mapId:null,
-  draftType:null,draftNote:'',draftOb:'',closed:null,gps:'unchecked',here:null,confirmOut:false,pendingN:0,regName:'',booting:true};
+  draftType:null,draftNote:'',draftOb:'',closed:null,gps:'unchecked',here:null,confirmOut:false,pendingN:0,regName:'',regMan:'',booting:true};
 let pending=null,sigDirty=false,clockTimer=null;
 const openCall=()=>state.calls.find(c=>c.status==='open');
 const getCall=id=>state.calls.find(c=>c.id===id);
@@ -158,7 +158,7 @@ function dbText(){if(!navigator.onLine)return'offline - saved here, will send wh
 function track(p){state.pendingN++;updateChip();return p.then(()=>{state.pendingN--;updateChip()},e=>{state.pendingN--;updateChip();throw e});}
 window.addEventListener('online',updateChip);window.addEventListener('offline',updateChip);
 
-function strip(c){return{id:c.id,uid:c.uid,email:c.email,officer:c.officer,vehicle:c.vehicle||'',type:c.type,note:c.note||'',ob:c.ob||'',status:c.status,createdAt:c.createdAt,signedAt:c.signedAt||null,sig:c.sig||null,
+function strip(c){return{id:c.id,uid:c.uid,email:c.email,officer:c.officer,man:c.man||'',vehicle:c.vehicle||'',type:c.type,note:c.note||'',ob:c.ob||'',status:c.status,createdAt:c.createdAt,signedAt:c.signedAt||null,sig:c.sig||null,
   stages:c.stages.map(s=>({k:s.k,ts:s.ts,km:s.km,pw:s.pw||0,ph:s.ph||0,lat:s.lat==null?null:s.lat,lon:s.lon==null?null:s.lon,acc:s.acc==null?null:s.acc}))};}
 async function loadCalls(){const snap=await getDocs(query(collection(db,'calls'),where('uid','==',state.user.uid)));
   state.calls=snap.docs.map(d=>Object.assign({},d.data(),{id:d.id})).sort((x,y)=>y.createdAt-x.createdAt);}
@@ -192,12 +192,12 @@ const IC={
  me:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-5 5-6 8-6s7 1 8 6"/></svg>'};
 
 /* ---------- views ---------- */
-function shell(inner){return `<header><div class="logo">${FLAME}</div><div><h1>Fire Support<br>Call Out Log</h1><small>${esc(state.user.officer||state.user.name)}${state.user.vehicle?' &middot; '+esc(state.user.vehicle):''}</small></div></header><div class="hazard"></div>${inner}
+function shell(inner){return `<header><div class="logo">${FLAME}</div><div><h1>Fire Support<br>Call Out Log</h1><small>${esc(state.user.officer||state.user.name)}${state.user.man?' &middot; '+esc(state.user.man):''}${state.user.vehicle?' &middot; '+esc(state.user.vehicle):''}</small></div></header><div class="hazard"></div>${inner}
 <nav class="tabs">${[['call','Call'],['history','History'],['report','Report'],['map','Map'],['me','Me']].map(([v,l])=>`<button data-act="tab" data-v="${v}" class="${state.view===v?'on':''}">${IC[{call:'call',history:'hist',report:'rep',map:'map',me:'me'}[v]]}${l}</button>`).join('')}</nav>`;}
 
 function authHTML(){const reg=state.authMode==='register';
   return `<header><div class="logo">${FLAME}</div><div><h1>Fire Support<br>Call Out Log</h1><small>Sign in to log your calls</small></div></header><div class="hazard"></div>
-  <div class="card">${reg?'<label for="a_name">Your name</label><input id="a_name" autocomplete="name">':''}
+  <div class="card">${reg?'<label for="a_name">Your name</label><input id="a_name" autocomplete="name"><label for="a_man">MAN number</label><input id="a_man" autocapitalize="characters" placeholder="e.g. MAN10001680">':''}
   <label for="a_email">Email</label><input id="a_email" type="email" autocomplete="email" inputmode="email">
   <label for="a_pw">Password</label><input id="a_pw" type="password" autocomplete="${reg?'new-password':'current-password'}">
   ${reg?'<label for="a_pw2">Repeat password</label><input id="a_pw2" type="password" autocomplete="new-password"><label style="display:flex;gap:12px;align-items:flex-start;color:var(--text)"><input id="a_ok" type="checkbox" style="width:34px;min-height:34px;flex:none;margin-top:2px"><span>I have read the privacy notice below and agree that my call times, photos and locations are recorded.</span></label>':''}
@@ -277,7 +277,7 @@ function mapHTML(){const calls=state.calls.filter(c=>c.stages.length);if(!state.
   return h+'</div>';}
 
 function meHTML(){const u=state.user;
-  return `<h2>My details</h2><div class="card"><label for="m_name">Officer name</label><input id="m_name" value="${esc(u.officer||u.name)}">
+  return `<h2>My details</h2><div class="card"><label>MAN number</label><input value="${esc(u.man||'')}" disabled><label for="m_name">Officer name</label><input id="m_name" value="${esc(u.officer||u.name)}">
   <label for="m_veh">Vehicle / call sign</label><input id="m_veh" value="${esc(u.vehicle||'')}">
   <label for="m_io">Information Officer (POPIA)</label><input id="m_io" value="${esc(u.infoOfficer||'')}" placeholder="Name and contact">
   <label for="m_to">Send reports to (email)</label><input id="m_to" type="email" inputmode="email" value="${esc(u.sendTo||'')}">
@@ -342,10 +342,10 @@ async function saveStage(){const err=$('#merr');if(!pending)return;
   let c=openCall();const prev=c&&c.stages.length?c.stages[c.stages.length-1].km:null;
   if(prev!=null&&km<prev){err.textContent='KM cannot be lower than the last reading ('+fmtKm(prev)+').';return}
   err.textContent='Saving...';const s=STAGES[pending.i],u=state.user,g=pending.gps||state.here&&Date.now()-state.here.ts<60000&&state.here||null;
-  let ph;try{ph=await stampPhoto(pending.photo,[s.n.toUpperCase()+'   '+fmtDate(pending.ts)+'  '+fmtTime(pending.ts),'KM '+fmtKm(km)+'   '+(u.officer||u.name)+(((c&&c.ob)||state.draftOb)?'   OB '+((c&&c.ob)||state.draftOb):''),g?'GPS '+g.lat.toFixed(5)+', '+g.lon.toFixed(5):'GPS not available'])}
+  let ph;try{ph=await stampPhoto(pending.photo,[s.n.toUpperCase()+'   '+fmtDate(pending.ts)+'  '+fmtTime(pending.ts),'KM '+fmtKm(km)+'   '+(u.officer||u.name)+(u.man?'   '+u.man:'')+(((c&&c.ob)||state.draftOb)?'   OB '+((c&&c.ob)||state.draftOb):''),g?'GPS '+g.lat.toFixed(5)+', '+g.lon.toFixed(5):'GPS not available'])}
   catch(e){err.textContent='That photo could not be read. Please retake it.';return}
   const isNew=!c;
-  if(isNew){c={id:'c'+Date.now(),uid:u.uid,email:u.email,officer:u.officer||u.name,vehicle:u.vehicle||'',type:state.draftType||suggestType(pending.ts),note:state.draftNote||'',ob:state.draftOb||'',stages:[],status:'open',createdAt:pending.ts};state.calls.unshift(c);}
+  if(isNew){c={id:'c'+Date.now(),uid:u.uid,email:u.email,officer:u.officer||u.name,man:u.man||'',vehicle:u.vehicle||'',type:state.draftType||suggestType(pending.ts),note:state.draftNote||'',ob:state.draftOb||'',stages:[],status:'open',createdAt:pending.ts};state.calls.unshift(c);}
   const st={k:s.k,ts:pending.ts,km,photo:ph.data,pw:ph.w,ph:ph.h,lat:g?g.lat:null,lon:g?g.lon:null,acc:g?g.acc:null};c.stages.push(st);
   const b=writeBatch(db);b.set(doc(db,'calls',c.id),strip(c));b.set(doc(db,'calls',c.id,'photos',s.k),{uid:u.uid,data:ph.data,w:ph.w,h:ph.h,ts:pending.ts});
   track(b.commit()).catch(e=>toast('This stage could not be sent to the database ('+((e&&e.code)||'error')+'). Do not close the app; tell Tim.',9000));
@@ -357,7 +357,7 @@ function callPDF(c){const{jsPDF}=window.jspdf,d=new jsPDF({unit:'mm',format:'a4'
   d.setFillColor(217,45,32);d.rect(0,0,210,22,'F');d.setTextColor(255);d.setFont('helvetica','bold');d.setFontSize(18);d.text('CALL-OUT RECORD',12,14);d.setFontSize(10);d.setFont('helvetica','normal');d.text('Fire Support Call Out Log',198,14,{align:'right'});
   let y=32;d.setTextColor(30);
   const kv=(a,b)=>{d.setFont('helvetica','normal');d.setFontSize(11);d.setTextColor(90);d.text(a,12,y);d.setFont('helvetica','bold');d.setTextColor(20);d.text(String(b),70,y,{maxWidth:128});y+=7;};
-  kv('Officer',c.officer);if(c.vehicle)kv('Vehicle / call sign',c.vehicle);kv('Type of call',c.type);kv('Reason',c.note||'-');kv('OB number',c.ob||'-');kv('Date',fmtDate(m.start));y+=3;
+  kv('Officer',c.officer);if(c.man||(state.user&&state.user.man))kv('MAN number',c.man||state.user.man);if(c.vehicle)kv('Vehicle / call sign',c.vehicle);kv('Type of call',c.type);kv('Reason',c.note||'-');kv('OB number',c.ob||'-');kv('Date',fmtDate(m.start));y+=3;
   d.setFillColor(40,32,28);d.rect(12,y-5,186,8,'F');d.setTextColor(255);d.setFont('helvetica','bold');d.setFontSize(10);
   [['Stage',14],['Time',62],['KM',92],['GPS',116]].forEach(([t,x])=>d.text(t,x,y+.5));y+=9;
   c.stages.forEach((s,i)=>{d.setTextColor(20);d.setFont('helvetica','normal');d.text(STAGES[i].n,14,y);d.text(fmtTime(s.ts),62,y);d.text(fmtKm(s.km),92,y);d.text(s.lat!=null?s.lat.toFixed(5)+', '+s.lon.toFixed(5):'not available',116,y);y+=7;});
@@ -376,7 +376,7 @@ function callPDF(c){const{jsPDF}=window.jspdf,d=new jsPDF({unit:'mm',format:'a4'
 
 function reportPDF(){const{jsPDF}=window.jspdf,d=new jsPDF({unit:'mm',format:'a4',orientation:'landscape'}),list=monthCalls(),t=monthTotals(list),u=state.user;
   const cols=[['Date',22],['OB No.',22],['Type',26],['Reason',38],['Out',14],['Scene',14],['Depart',14],['Base',14],['Avail',14],['KM',16],['Total',20],['Normal',20],['Overtime',22]];
-  const head=()=>{d.setFillColor(217,45,32);d.rect(0,0,297,20,'F');d.setTextColor(255);d.setFont('helvetica','bold');d.setFontSize(16);d.text('MONTH-END CALL REPORT',10,13);d.setFontSize(10);d.setFont('helvetica','normal');d.text(monthName(state.month)+'  -  '+(u.officer||u.name)+(u.vehicle?'  -  '+u.vehicle:''),287,13,{align:'right'});};
+  const head=()=>{d.setFillColor(217,45,32);d.rect(0,0,297,20,'F');d.setTextColor(255);d.setFont('helvetica','bold');d.setFontSize(16);d.text('MONTH-END CALL REPORT',10,13);d.setFontSize(10);d.setFont('helvetica','normal');d.text(monthName(state.month)+'  -  '+(u.officer||u.name)+(u.man?'  -  '+u.man:'')+(u.vehicle?'  -  '+u.vehicle:''),287,13,{align:'right'});};
   const th=y=>{d.setFillColor(40,32,28);d.rect(10,y-5,277,8,'F');d.setTextColor(255);d.setFont('helvetica','bold');d.setFontSize(9);let x=11;cols.forEach(([n,w])=>{d.text(n,x,y);x+=w+1});};
   head();let y=30;d.setTextColor(20);d.setFont('helvetica','bold');d.setFontSize(11);
   d.text(`Calls: ${list.length}     Total KM: ${fmtKm(t.km)}     Total time: ${fmtHM(t.el)}     Normal hours: ${fmtHM(t.n)}     Overtime: ${fmtHM(t.o)}`,10,y);y+=10;th(y);y+=8;
@@ -417,7 +417,7 @@ async function callAction(id,mode){const c=getCall(id);if(!c)return;if(!window.j
   if(mode==='pic'){const b=await makeCard(c.type,fmtDate(m.start)+(c.ob?'  -  OB '+c.ob:'')+(c.note?'  -  '+c.note:''),[['Call-out',fmtTime(c.stages[0].ts)],['On scene',fmtTime(c.stages[1].ts)],['Departing',fmtTime(c.stages[2].ts)],['Back at base',fmtTime(c.stages[3].ts)],['Available',fmtTime(c.stages[4].ts)],['Total KM',fmtKm(m.km)],['Total time',fmtHM(m.el)]]);return deliver(b,cname(c)+'.png','picture',subj,body)}
   try{return await deliver(callPDF(c),cname(c)+'.pdf',mode==='email'?'email':'save',subj,body)}catch(e){toast('Could not make the PDF.')}}
 async function reportAction(mode){const list=monthCalls();if(!list.length||!window.jspdf)return;const t=monthTotals(list),subj='Month-end call report - '+monthName(state.month),body=subj+'. Calls: '+list.length+', total '+fmtKm(t.km)+' km, '+fmtHM(t.el)+', overtime '+fmtHM(t.o)+'.';
-  if(mode==='pic'){const b=await makeCard(monthName(state.month),(state.user.officer||state.user.name),[['Calls',String(list.length)],['Total KM',fmtKm(t.km)],['Total time',fmtHM(t.el)],['Normal hours',fmtHM(t.n)],['Overtime',fmtHM(t.o)]]);return deliver(b,'Report_'+state.month+'.png','picture',subj,body)}
+  if(mode==='pic'){const b=await makeCard(monthName(state.month),(state.user.officer||state.user.name)+(state.user.man?'  '+state.user.man:''),[['Calls',String(list.length)],['Total KM',fmtKm(t.km)],['Total time',fmtHM(t.el)],['Normal hours',fmtHM(t.n)],['Overtime',fmtHM(t.o)]]);return deliver(b,'Report_'+state.month+'.png','picture',subj,body)}
   try{return await deliver(reportPDF(),'Report_'+state.month+'.pdf',mode==='email'?'email':'save',subj,body)}catch(e){toast('Could not make the PDF.')}}
 
 /* ---------- actions ---------- */
@@ -434,7 +434,7 @@ async function doAuth(){const em=($('#a_email').value||'').trim().toLowerCase(),
   $('#autherr').textContent='Please wait...';
   try{
     if(reg){const nm=($('#a_name').value||'').trim();if(!nm)return fail('Please type your name.');if(pw!==$('#a_pw2').value)return fail('The two passwords do not match.');if(!$('#a_ok').checked)return fail('Please tick the box to accept the privacy notice.');
-      state.regName=nm;await createUserWithEmailAndPassword(auth,em,pw);}
+      const mn=($('#a_man').value||'').trim().toUpperCase().replace(/\s+/g,'');if(!/^MAN\d{5,}$/.test(mn))return fail('Please type your MAN number, for example MAN10001680.');state.regMan=mn;state.regName=nm;await createUserWithEmailAndPassword(auth,em,pw);}
     else await signInWithEmailAndPassword(auth,em,pw);
     state.authErr='';
   }catch(e){fail(authMsg(e))}}
@@ -444,7 +444,7 @@ async function forgot(){const em=($('#a_email')&&$('#a_email').value||'').trim()
   toast('If that email has a login, a reset link has been sent to it.',7000);}
 async function enterApp(fu){let prof=null;const ref=doc(db,'profiles',fu.uid);
   try{const sn=await getDoc(ref);if(sn.exists())prof=sn.data()}catch(e){}
-  if(!prof){prof={uid:fu.uid,email:fu.email,name:state.regName||(fu.email||'').split('@')[0],officer:state.regName||(fu.email||'').split('@')[0],vehicle:'',sendTo:'',infoOfficer:'',consentAt:Date.now(),createdAt:Date.now(),lastWeekly:0};
+  if(!prof){prof={uid:fu.uid,email:fu.email,name:state.regName||(fu.email||'').split('@')[0],officer:state.regName||(fu.email||'').split('@')[0],man:state.regMan||'',vehicle:'',sendTo:'',infoOfficer:'',consentAt:Date.now(),createdAt:Date.now(),lastWeekly:0};
     setDoc(ref,prof).catch(()=>{});}
   state.user=Object.assign({},prof,{uid:fu.uid,email:fu.email});
   try{await loadCalls()}catch(e){state.calls=[]}
