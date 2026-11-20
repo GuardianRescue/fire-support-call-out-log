@@ -1,0 +1,494 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Fire Support Call Out Log</title>
+<meta name="theme-color" content="#e8401f">
+<meta name="color-scheme" content="dark">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Call Out Log">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;600;700&family=Barlow+Condensed:wght@600;700&display=swap">
+<style>
+html{color-scheme:dark}
+
+/* Layout: one-hand, big-type phone app. Header with hazard stripe, five stacked colour buttons, fixed bottom tabs. */
+:root{
+  --bg:#14100e; --surface:#221a16; --surface2:#2d231e; --line:#44362e;
+  --text:#f6efe9; --muted:#b9a99e; --fire:#e8401f; --amber:#f7b500; --ok:#35b35a; --bad:#ff6b5a;
+  --display:'Barlow Condensed','Arial Narrow',Impact,sans-serif; --body:'Barlow',system-ui,-apple-system,'Segoe UI',sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{background-color:var(--bg);background-image:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='48' height='48'><rect width='48' height='48' fill='%23191310'/><g fill='%23302520' stroke='%23463830' stroke-width='1'><rect x='3' y='9.5' width='18' height='5' rx='2.5' transform='rotate(45 12 12)'/><rect x='27' y='33.5' width='18' height='5' rx='2.5' transform='rotate(45 36 36)'/><rect x='27' y='9.5' width='18' height='5' rx='2.5' transform='rotate(-45 36 12)'/><rect x='3' y='33.5' width='18' height='5' rx='2.5' transform='rotate(-45 12 36)'/></g></svg>");background-size:48px 48px;background-attachment:fixed}
+body{margin:0;color:var(--text);font:400 20px/1.4 var(--body);-webkit-text-size-adjust:100%;touch-action:manipulation;overflow-x:hidden;padding-top:env(safe-area-inset-top,0px);padding-bottom:calc(120px + env(safe-area-inset-bottom,0px));padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+button,input,select{font:inherit;color:inherit;-webkit-appearance:none;appearance:none}
+select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='12'%3E%3Cpath d='M2 2l8 8 8-8' fill='none' stroke='%23b9a99e' stroke-width='3'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:46px}
+header{display:flex;align-items:center;gap:12px;padding:14px 0 12px}
+header .logo{width:54px;height:54px;display:grid;place-items:center;flex:none}
+header h1{font:700 clamp(24px,7.4vw,32px)/1.05 var(--display);letter-spacing:.06em;text-transform:uppercase;margin:0}
+header small{display:block;color:var(--muted);font-size:16px}
+.hazard{height:10px;border-radius:2px;background:repeating-linear-gradient(45deg,#f7b500 0 14px,#14100e 14px 28px);margin-bottom:16px}
+h2{font:700 28px/1.1 var(--display);letter-spacing:.05em;text-transform:uppercase;margin:6px 0 12px}
+.card{background:rgba(34,26,22,.95);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:16px}
+label{display:block;color:var(--muted);font-size:17px;margin:10px 0 6px}
+label:first-child{margin-top:0}
+input,select{width:100%;min-height:58px;padding:10px 14px;background:var(--surface2);border:2px solid var(--line);border-radius:12px}
+input:focus,select:focus,button:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
+.btn{display:block;width:100%;min-height:64px;border:0;border-radius:14px;background:var(--fire);color:#fff;font:700 26px var(--display);letter-spacing:.06em;text-transform:uppercase;cursor:pointer;padding:10px 16px}
+.btn.alt{background:var(--surface2);border:2px solid var(--line)}
+.btn.ok{background:var(--ok)}
+.btn:disabled{opacity:.4}
+.row{display:flex;gap:12px;flex-wrap:wrap}
+.row>*{flex:1 1 150px;min-width:0}
+.stage{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;min-height:92px;margin-bottom:12px;border:0;border-radius:16px;background:var(--c);color:var(--t);font:700 clamp(24px,7.6vw,32px) var(--display);letter-spacing:.05em;text-transform:uppercase;padding:0 clamp(12px,4vw,20px);text-align:left;cursor:pointer}
+.stage small{display:block;font:600 18px var(--body);letter-spacing:0;text-transform:none;opacity:.92}
+.stage .r{text-align:right;font:600 clamp(15px,4.4vw,19px)/1.25 var(--body);letter-spacing:0;text-transform:none;white-space:nowrap}
+.stage.done{opacity:.6}
+.stage.wait{opacity:.28;cursor:not-allowed}
+.stage.next{box-shadow:0 0 0 4px var(--bg),0 0 0 8px var(--c);animation:glow 1.6s ease-in-out infinite}
+@keyframes glow{50%{box-shadow:0 0 0 4px var(--bg),0 0 0 12px var(--c)}}
+@media (prefers-reduced-motion:reduce){.stage.next{animation:none}}
+.chip{display:inline-block;padding:4px 12px;border-radius:99px;background:var(--surface2);border:1px solid var(--line);font-size:16px;color:var(--muted)}
+.clock{font:700 clamp(44px,15vw,56px)/1 var(--display);letter-spacing:.04em;font-variant-numeric:tabular-nums;color:var(--amber)}
+.kv{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid var(--line)}
+.kv:last-child{border-bottom:0}
+.kv b{font-variant-numeric:tabular-nums;text-align:right}
+.big{font:700 40px/1 var(--display);font-variant-numeric:tabular-nums}
+.tot{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:12px}
+.tot div{background:var(--surface2);border-radius:12px;padding:12px}
+.tot span{display:block;color:var(--muted);font-size:16px}
+.tabs{position:fixed;left:0;right:0;bottom:0;display:flex;background:var(--surface);border-top:3px solid var(--fire);padding:0 max(0px,env(safe-area-inset-left,0px)) env(safe-area-inset-bottom,0px) max(0px,env(safe-area-inset-right,0px));z-index:5}
+.tabs button{flex:1;min-width:0;min-height:70px;border:0;background:none;color:var(--muted);font:700 20px var(--display);letter-spacing:.05em;text-transform:uppercase;display:grid;place-items:center;gap:2px;padding:6px 0}
+.tabs button.on{color:#fff;background:var(--fire)}
+.tabs svg{width:26px;height:26px}
+.tw{overflow-x:auto;border:1px solid var(--line);border-radius:12px;margin-bottom:16px}
+table{border-collapse:collapse;width:100%;font-size:16px;font-variant-numeric:tabular-nums}
+th,td{padding:9px 10px;text-align:left;white-space:nowrap;border-bottom:1px solid var(--line)}
+th{background:var(--surface2);color:var(--amber);font:700 17px var(--display);letter-spacing:.05em;text-transform:uppercase}
+tfoot td{font-weight:700;background:var(--surface2)}
+canvas#sig{width:100%;height:min(46vw,220px);min-height:170px;background:#fff;border-radius:12px;touch-action:none;display:block}
+.modal{position:fixed;inset:0;background:rgba(10,6,4,.88);z-index:20;overflow-y:auto;padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.modal .sheet{max-width:560px;margin:0 auto;background:var(--surface);border-radius:18px;overflow:hidden;border:1px solid var(--line)}
+.modal .top{padding:14px 18px;font:700 34px var(--display);letter-spacing:.06em;text-transform:uppercase;background:var(--c);color:var(--t)}
+.modal .in{padding:16px}
+.modal img.pv{width:100%;border-radius:12px;display:block;margin:10px 0}
+.err{color:var(--bad);font-weight:600;min-height:1.4em}
+.toast{position:fixed;left:16px;right:16px;bottom:100px;z-index:30;background:#fff;color:#111;border-radius:12px;padding:14px 16px;font-weight:600;box-shadow:0 6px 24px rgba(0,0,0,.5)}
+.note{color:var(--muted);font-size:16px}
+.mapbox{background:#1b1411;border:1px solid var(--line);border-radius:12px}
+a{color:var(--amber)}
+@media (max-width:380px){body{font-size:18px}.btn{font-size:22px}.tabs button{font-size:17px}}
+.hist h3{margin:0;font:700 26px var(--display);letter-spacing:.04em;text-transform:uppercase}
+</style>
+</head>
+<body>
+<div id="app"><p style="text-align:center;padding:40px 0;font:700 28px var(--display);letter-spacing:.05em">LOADING...</p></div>
+<div id="modal" hidden></div>
+<div id="toast" class="toast" hidden></div>
+<input type="file" id="cam" accept="image/*" capture="environment" hidden>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script type="module">
+import{initializeApp}from"https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+import{getAuth,onAuthStateChanged,createUserWithEmailAndPassword,signInWithEmailAndPassword,signOut,sendPasswordResetEmail}from"https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
+import{initializeFirestore,getFirestore,persistentLocalCache,persistentMultipleTabManager,doc,setDoc,getDoc,getDocs,collection,query,where,writeBatch}from"https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+(function(){
+'use strict';
+/* ---------- helpers ---------- */
+const $=s=>document.querySelector(s);
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const pad=n=>String(n).padStart(2,'0');
+const fmtDate=t=>{const d=new Date(t);return d.getDate()+' '+MON[d.getMonth()]+' '+d.getFullYear()};
+const fmtTime=t=>{const d=new Date(t);return pad(d.getHours())+':'+pad(d.getMinutes())+':'+pad(d.getSeconds())};
+const fmtHM=ms=>{const m=Math.round(ms/60000);return Math.floor(m/60)+'h '+pad(m%60)+'m'};
+const fmtHMS=ms=>{const s=Math.max(0,Math.floor(ms/1000));return pad(Math.floor(s/3600))+':'+pad(Math.floor(s%3600/60))+':'+pad(s%60)};
+const fmtKm=k=>String(Math.round(k*10)/10);
+const monthKey=t=>{const d=new Date(t);return d.getFullYear()+'-'+pad(d.getMonth()+1)};
+const monthName=k=>{const [y,m]=k.split('-');return ['January','February','March','April','May','June','July','August','September','October','November','December'][+m-1]+' '+y};
+const gmaps=(la,lo)=>'https://www.google.com/maps?q='+la+','+lo;
+
+const STAGES=[
+ {k:'out',n:'Call-out time',s:'Call-out',c:'#d92d20',t:'#fff'},
+ {k:'scene',n:'On scene',s:'On scene',c:'#f07a12',t:'#1a0d00'},
+ {k:'depart',n:'Departing scene',s:'Departing',c:'#f5b400',t:'#1a1200'},
+ {k:'base',n:'Back at base',s:'Back at base',c:'#2e9e4f',t:'#fff'},
+ {k:'avail',n:'Available',s:'Available',c:'#1d78d4',t:'#fff'}
+];
+const TYPES=['Call out','After hours call','Weekend call','Support','Fuel run','Fuel','Generator','Lighting','Extra rescue tools','Other'];
+const SEGN=['Call-out to on scene','On scene','Departing to base','Base to available'];
+const NOTICE='Privacy notice (POPIA): this app records your call-out, on-scene, departing, back-at-base and available times, OB number, odometer and dashboard photos, GPS positions and signature. They are used only to keep call records, work out kilometres and hours, and compile weekly and month-end reports. Records are stored in a secure database hosted in Johannesburg, South Africa, linked to your own login. Only you can read your records, and a signed call can no longer be changed or deleted. Nothing is shared unless you save, email or send a file yourself. You may ask the Information Officer to see or correct your information.';
+const POPIA='Personal information in this record (names, photos, locations) is processed under POPIA for operational and compliance purposes only.';
+
+function suggestType(ts){const d=new Date(ts),dow=d.getDay(),m=d.getHours()*60+d.getMinutes();
+  if(dow===0||dow===6)return'Weekend call'; if(m<450||m>=960)return'After hours call'; return'Call out';}
+
+/* Officer works 07:30-16:00 Mon-Fri. From 16:00 (and before 07:30, weekends) it is standby/overtime. */
+function splitHours(a,b){let normal=0,over=0,cur=a;
+  while(cur<b){const d=new Date(cur);const y=d.getFullYear(),mo=d.getMonth(),dd=d.getDate();
+    const dayEnd=new Date(y,mo,dd+1).getTime(),segEnd=Math.min(b,dayEnd),dow=d.getDay();let n=0;
+    if(dow>0&&dow<6){const ns=new Date(y,mo,dd,7,30).getTime(),ne=new Date(y,mo,dd,16,0).getTime();n=Math.max(0,Math.min(segEnd,ne)-Math.max(cur,ns));}
+    normal+=n;over+=(segEnd-cur)-n;cur=segEnd;}
+  return{normal,over};}
+
+function metrics(c){const s=c.stages;if(s.length<2)return null;
+  const start=s[0].ts,end=s[s.length-1].ts,sp=splitHours(start,end),seg=[];
+  for(let i=1;i<s.length;i++)seg.push(s[i].ts-s[i-1].ts);
+  return{start,end,el:end-start,km:s[s.length-1].km-s[0].km,normal:sp.normal,over:sp.over,seg};}
+
+/* ---------- Firebase ---------- */
+const firebaseConfig={apiKey:"AIzaSyCmyWaDj9EZyJUWfu19GZBs-JUngoRgOs8",authDomain:"fire-support-call-out-log.firebaseapp.com",projectId:"fire-support-call-out-log",storageBucket:"fire-support-call-out-log.firebasestorage.app",messagingSenderId:"289665391995",appId:"1:289665391995:web:6f239b1fc6fa49d8f2b1de"};
+const fbApp=initializeApp(firebaseConfig);const auth=getAuth(fbApp);
+let db;try{db=initializeFirestore(fbApp,{localCache:persistentLocalCache({tabManager:persistentMultipleTabManager()})})}catch(e){db=getFirestore(fbApp)}
+
+/* ---------- state ---------- */
+const state={user:null,calls:[],view:'call',authMode:'login',authErr:'',month:monthKey(Date.now()),mapId:null,
+  draftType:null,draftNote:'',draftOb:'',closed:null,gps:'unchecked',here:null,confirmOut:false,pendingN:0,regName:'',booting:true};
+let pending=null,sigDirty=false,clockTimer=null;
+const openCall=()=>state.calls.find(c=>c.status==='open');
+const getCall=id=>state.calls.find(c=>c.id===id);
+
+function updateChip(){const e=document.getElementById('dbchip');if(!e)return;e.textContent='Database: '+dbText();}
+function dbText(){if(!navigator.onLine)return'offline - saved here, will send when signal returns';return state.pendingN>0?'sending...':'saved';}
+function track(p){state.pendingN++;updateChip();return p.then(()=>{state.pendingN--;updateChip()},e=>{state.pendingN--;updateChip();throw e});}
+window.addEventListener('online',updateChip);window.addEventListener('offline',updateChip);
+
+function strip(c){return{id:c.id,uid:c.uid,email:c.email,officer:c.officer,vehicle:c.vehicle||'',type:c.type,note:c.note||'',ob:c.ob||'',status:c.status,createdAt:c.createdAt,signedAt:c.signedAt||null,sig:c.sig||null,
+  stages:c.stages.map(s=>({k:s.k,ts:s.ts,km:s.km,pw:s.pw||0,ph:s.ph||0,lat:s.lat==null?null:s.lat,lon:s.lon==null?null:s.lon,acc:s.acc==null?null:s.acc}))};}
+async function loadCalls(){const snap=await getDocs(query(collection(db,'calls'),where('uid','==',state.user.uid)));
+  state.calls=snap.docs.map(d=>Object.assign({},d.data(),{id:d.id})).sort((x,y)=>y.createdAt-x.createdAt);}
+async function ensurePhotos(c){if(c.stages.every(s=>s.photo))return;
+  const snap=await getDocs(collection(db,'calls',c.id,'photos'));const m={};snap.forEach(d=>{m[d.id]=d.data()});
+  c.stages.forEach(s=>{const p=m[s.k];if(p){s.photo=p.data;s.pw=p.w;s.ph=p.h}});
+  if(c.stages.some(s=>!s.photo))throw new Error('photos missing');}
+
+/* weekly automatic update: once every 7 days a summary of the week is saved as its own permanent record */
+async function weeklyUpdate(force){const u=state.user;if(!u)return false;if(!force&&Date.now()-(u.lastWeekly||0)<7*864e5)return false;
+  const end=Date.now(),start=end-7*864e5,list=state.calls.filter(c=>c.stages.length===5&&c.stages[4].ts>=start),t=monthTotals(list),d=new Date(end);
+  const id=u.uid+'_'+d.getFullYear()+pad(d.getMonth()+1)+pad(d.getDate());const b=writeBatch(db);
+  b.set(doc(db,'weekly',id),{uid:u.uid,from:start,to:end,calls:list.length,km:Math.round(t.km*10)/10,elapsedMs:t.el,normalMs:t.n,overMs:t.o,callIds:list.map(c=>c.id),createdAt:end});
+  b.set(doc(db,'profiles',u.uid),{lastWeekly:end},{merge:true});u.lastWeekly=end;
+  try{await track(b.commit());return true}catch(e){u.lastWeekly=0;return false}}
+
+function toast(msg,ms){const t=$('#toast');t.textContent=msg;t.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>{t.hidden=true},ms||4500);}
+
+function getGPS(){return new Promise(res=>{if(!navigator.geolocation){state.gps='off';return res(null)}
+  let done=false;const fin=v=>{if(done)return;done=true;clearTimeout(tm);state.gps=v?'ok':'off';if(v)state.here=Object.assign({ts:Date.now()},v);res(v)};
+  const tm=setTimeout(()=>fin(null),9000);
+  try{navigator.geolocation.getCurrentPosition(p=>fin({lat:p.coords.latitude,lon:p.coords.longitude,acc:p.coords.accuracy}),()=>fin(null),{enableHighAccuracy:true,timeout:8000,maximumAge:10000});}catch(e){fin(null)}});}
+
+/* ---------- icons ---------- */
+const FLAME='<svg viewBox="0 0 48 48" width="54" height="54" aria-hidden="true"><path d="M12 3l12 6 12-6-8 17 17-8-6 12 6 12-17-8 8 17-12-6-12 6 8-17-17 8 6-12-6-12 17 8z" fill="#e8401f" stroke="#e8401f" stroke-width="1.2" stroke-linejoin="round"/><circle cx="24" cy="24" r="11.5" fill="#ffffff"/><path transform="translate(11.4 15.6) scale(.9)" d="M12 2c1 4-3 6-3 10a5 5 0 0 0 10 0c0-2-1-3-2-5 0 2-1 3-2 3 1-3 0-6-3-8z" fill="#e8401f"/></svg>';
+const IC={
+ call:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 3a6 6 0 0 0-6 6v5H4v3h16v-3h-2V9a6 6 0 0 0-6-6zM9 20h6"/></svg>',
+ hist:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 3h9l4 4v14H6zM9 12h7M9 16h7"/></svg>',
+ rep:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/></svg>',
+ map:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 22s7-6.5 7-12a7 7 0 0 0-14 0c0 5.500 7 12 7 12z"/><circle cx="12" cy="10" r="2.5"/></svg>',
+ me:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-5 5-6 8-6s7 1 8 6"/></svg>'};
+
+/* ---------- views ---------- */
+function shell(inner){return `<header><div class="logo">${FLAME}</div><div><h1>Fire Support<br>Call Out Log</h1><small>${esc(state.user.officer||state.user.name)}${state.user.vehicle?' &middot; '+esc(state.user.vehicle):''}</small></div></header><div class="hazard"></div>${inner}
+<nav class="tabs">${[['call','Call'],['history','History'],['report','Report'],['map','Map'],['me','Me']].map(([v,l])=>`<button data-act="tab" data-v="${v}" class="${state.view===v?'on':''}">${IC[{call:'call',history:'hist',report:'rep',map:'map',me:'me'}[v]]}${l}</button>`).join('')}</nav>`;}
+
+function authHTML(){const reg=state.authMode==='register';
+  return `<header><div class="logo">${FLAME}</div><div><h1>Fire Support<br>Call Out Log</h1><small>Sign in to log your calls</small></div></header><div class="hazard"></div>
+  <div class="card">${reg?'<label for="a_name">Your name</label><input id="a_name" autocomplete="name">':''}
+  <label for="a_email">Email</label><input id="a_email" type="email" autocomplete="email" inputmode="email">
+  <label for="a_pw">Password</label><input id="a_pw" type="password" autocomplete="${reg?'new-password':'current-password'}">
+  ${reg?'<label for="a_pw2">Repeat password</label><input id="a_pw2" type="password" autocomplete="new-password"><label style="display:flex;gap:12px;align-items:flex-start;color:var(--text)"><input id="a_ok" type="checkbox" style="width:34px;min-height:34px;flex:none;margin-top:2px"><span>I have read the privacy notice below and agree that my call times, photos and locations are recorded.</span></label>':''}
+  <div class="err" id="autherr">${esc(state.authErr)}</div>
+  <button class="btn" data-act="doAuth">${reg?'Create my login':'Log in'}</button>
+  ${reg?'':'<p style="text-align:center"><a href="#" data-act="forgot" data-link="1">Forgot password</a></p>'}<p style="text-align:center"><a href="#" data-act="toggleAuth">${reg?'I already have a login':'Create a new login'}</a></p></div>
+  <div class="card"><div class="kv"><span>Database</span><b id="dbchip2">Johannesburg</b></div><div class="kv"><span>Last weekly update</span><b>${u.lastWeekly?fmtDate(u.lastWeekly)+' '+fmtTime(u.lastWeekly).slice(0,5):'not yet'}</b></div>
+  <p class="note">Every call is saved to the database as you work. Once every 7 days the app also saves a summary of the week by itself when you open it.</p><button class="btn alt" data-act="weekly">Update now</button></div>
+  <p class="note">${esc(NOTICE)}</p>`;}
+
+function summaryHTML(c){const m=metrics(c);if(!m)return'';
+  return `<div class="tot"><div><span>Total KM</span><span class="big">${fmtKm(m.km)}</span></div><div><span>Total time</span><span class="big">${fmtHM(m.el)}</span></div></div>
+  <div class="kv"><span>Date</span><b>${fmtDate(m.start)}</b></div>
+  ${c.ob?`<div class="kv"><span>OB number</span><b>${esc(c.ob)}</b></div>`:''}
+  ${m.seg.map((v,i)=>`<div class="kv"><span>${SEGN[i]}</span><b>${fmtHM(v)}</b></div>`).join('')}
+  <div class="kv"><span>Normal hours (07:30-16:00)</span><b>${fmtHM(m.normal)}</b></div>
+  <div class="kv"><span>Standby / overtime</span><b>${fmtHM(m.over)}</b></div>`;}
+
+function actionsHTML(id){return `<div class="row" style="margin-top:12px"><button class="btn alt" data-act="pdf" data-id="${id}">Save PDF</button><button class="btn alt" data-act="email" data-id="${id}">Email PDF</button><button class="btn alt" data-act="pic" data-id="${id}">Send as picture</button></div>`;}
+
+function homeHTML(){
+  if(state.closed){const c=getCall(state.closed);if(c)return `<h2>Call closed</h2><div class="card"><div class="kv"><span>Type</span><b>${esc(c.type)}</b></div>${summaryHTML(c)}${actionsHTML(c.id)}<button class="btn ok" style="margin-top:12px" data-act="newCall">New call</button></div>`;}
+  const c=openCall(),done=c?c.stages.length:0;
+  const type=c?c.type:(state.draftType||suggestType(Date.now())),note=c?c.note:state.draftNote;
+  let h=`<div class="card"><label for="ctype">Type of call</label><select id="ctype" ${c?'disabled':''}>${TYPES.map(t=>`<option ${t===type?'selected':''}>${t}</option>`).join('')}</select>
+  <label for="cnote">Call-out reason (optional)</label><input id="cnote" value="${esc(note)}" ${c?'disabled':''} placeholder="e.g. Veld fire, Plot 12">
+  <label for="cob">OB number (SAPS Occurrence Book)</label><input id="cob" value="${esc(c?c.ob||'':state.draftOb)}" ${c&&c.status!=='open'?'disabled':''} placeholder="Type the OB number" autocomplete="off" autocapitalize="characters" enterkeyhint="done"></div>`;
+  if(c&&done&&done<5)h+=`<div class="card" style="text-align:center"><span class="note">Time elapsed</span><div class="clock" id="clock">${fmtHMS(Date.now()-c.stages[0].ts)}</div></div>`;
+  h+=STAGES.map((s,i)=>{const st=i<done?'done':i===done?'next':'wait',x=c&&c.stages[i];
+    return `<button class="stage ${st}" style="--c:${s.c};--t:${s.t}" data-act="stage" data-i="${i}" ${st!=='next'?'aria-disabled="true"':''}><span>${s.n}<small>${st==='next'?'Tap, then take photo of KM and dash':st==='done'?'Done':'Waiting'}</small></span>${x?`<span class="r">${fmtTime(x.ts)}<br>${fmtKm(x.km)} km</span>`:''}</button>`}).join('');
+  h+=`<p style="text-align:center"><span class="chip">GPS: ${state.gps==='ok'?'on':state.gps==='off'?'not available - allow location':'checks on each tap'}</span> <span class="chip" id="dbchip">Database: ${dbText()}</span></p>`;
+  if(c&&done===5){h+=`<h2>Call complete</h2><div class="card">${summaryHTML(c)}</div>
+    <div class="card"><label for="sname">Officer name</label><input id="sname" value="${esc(state.user.officer||state.user.name)}"><label>Sign with your finger</label><canvas id="sig"></canvas>
+    <div class="err" id="sigerr"></div><div class="row"><button class="btn alt" data-act="clearSig">Clear</button><button class="btn ok" data-act="closeCall">Sign &amp; close</button></div></div>`;}
+  return h;}
+
+function histHTML(){const done=state.calls.filter(c=>c.stages.length);
+  if(!done.length)return '<h2>History</h2><div class="card">No calls yet. Your calls will show here.</div>';
+  return '<h2>History</h2>'+done.map(c=>{const m=metrics(c);return `<div class="card hist"><h3>${esc(c.type)}</h3><div class="note">${fmtDate(c.stages[0].ts)} &middot; ${c.status==='closed'?'Signed':c.stages.length===5?'Awaiting signature':'In progress'}</div>
+   ${c.note?`<div>${esc(c.note)}</div>`:''}${c.ob?`<div class="note">OB ${esc(c.ob)}</div>`:''}${m?`<div class="kv"><span>Total KM / time</span><b>${fmtKm(m.km)} km &middot; ${fmtHM(m.el)}</b></div>`:''}
+   ${c.status==='closed'?actionsHTML(c.id):`<button class="btn alt" style="margin-top:10px" data-act="tab" data-v="call">Open call</button>`}
+   <button class="btn alt" style="margin-top:10px" data-act="showmap" data-id="${c.id}">See on map</button></div>`}).join('');}
+
+function monthCalls(){return state.calls.filter(c=>c.stages.length===5&&monthKey(c.stages[0].ts)===state.month).sort((a,b)=>a.stages[0].ts-b.stages[0].ts);}
+function monthTotals(list){let km=0,el=0,n=0,o=0;list.forEach(c=>{const m=metrics(c);km+=m.km;el+=m.el;n+=m.normal;o+=m.over});return{km,el,n,o};}
+
+function reportHTML(){const list=monthCalls(),t=monthTotals(list);
+  return `<h2>Month-end report</h2><div class="card"><label for="mon">Month</label><input id="mon" type="month" value="${state.month}">
+  <div class="tot" style="margin-top:14px"><div><span>Calls</span><span class="big">${list.length}</span></div><div><span>Total KM</span><span class="big">${fmtKm(t.km)}</span></div><div><span>Total time</span><span class="big">${fmtHM(t.el)}</span></div><div><span>Overtime</span><span class="big">${fmtHM(t.o)}</span></div></div>
+  <div class="row"><button class="btn alt" data-act="rpdf" ${list.length?'':'disabled'}>Save PDF</button><button class="btn alt" data-act="remail" ${list.length?'':'disabled'}>Email PDF</button><button class="btn alt" data-act="rpic" ${list.length?'':'disabled'}>Send as picture</button></div></div>
+  ${list.length?`<div class="tw"><table><thead><tr><th>Date</th><th>OB No.</th><th>Type</th><th>Reason</th><th>Out</th><th>Scene</th><th>Depart</th><th>Base</th><th>Avail</th><th>KM</th><th>Total</th><th>Normal</th><th>Overtime</th></tr></thead><tbody>
+  ${list.map(c=>{const m=metrics(c),s=c.stages;return `<tr><td>${fmtDate(m.start)}</td><td>${esc(c.ob||'-')}</td><td>${esc(c.type)}</td><td>${esc(c.note||'-')}</td>${s.map(x=>`<td>${fmtTime(x.ts).slice(0,5)}</td>`).join('')}<td>${fmtKm(m.km)}</td><td>${fmtHM(m.el)}</td><td>${fmtHM(m.normal)}</td><td>${fmtHM(m.over)}</td></tr>`}).join('')}</tbody>
+  <tfoot><tr><td colspan="9">Totals</td><td>${fmtKm(t.km)}</td><td>${fmtHM(t.el)}</td><td>${fmtHM(t.n)}</td><td>${fmtHM(t.o)}</td></tr></tfoot></table></div>`:'<div class="card">No completed calls in this month.</div>'}
+  <p class="note">Normal hours are 07:30 to 16:00, Monday to Friday. Time from 16:00, before 07:30 and on weekends counts as standby/overtime.</p>`;}
+
+function mapSVG(pts){const W=600,H=340,P=56;
+  const la0=Math.min(...pts.map(p=>p.lat)),la1=Math.max(...pts.map(p=>p.lat)),lo0=Math.min(...pts.map(p=>p.lon)),lo1=Math.max(...pts.map(p=>p.lon));
+  const k=Math.cos((la0+la1)/2*Math.PI/180);let sx=(lo1-lo0)*k,sy=la1-la0;if(sx<1e-5)sx=1e-5;if(sy<1e-5)sy=1e-5;
+  const sc=Math.min((W-2*P)/sx,(H-2*P)/sy),ox=(W-sx*sc)/2,oy=(H-sy*sc)/2;
+  const X=p=>ox+(p.lon-lo0)*k*sc,Y=p=>oy+(la1-p.lat)*sc;
+  let g='';for(let i=1;i<6;i++){g+=`<line x1="${W/6*i}" y1="0" x2="${W/6*i}" y2="${H}" stroke="#2d231e"/><line x1="0" y1="${H/6*i}" x2="${W}" y2="${H*i/6}" stroke="#2d231e"/>`}
+  g+=`<polyline fill="none" stroke="#f7b500" stroke-width="3" stroke-dasharray="8 6" points="${pts.map(p=>X(p)+','+Y(p)).join(' ')}"/>`;
+  pts.forEach(p=>{g+=`<circle cx="${X(p)}" cy="${Y(p)}" r="17" fill="${p.c}" stroke="#14100e" stroke-width="3"/><text x="${X(p)}" y="${Y(p)+6}" text-anchor="middle" font-size="18" font-weight="700" fill="${p.t}" font-family="sans-serif">${p.i}</text>`});
+  return `<svg class="mapbox" viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Schematic of the call stops">${g}</svg>`;}
+
+function dist(a,b){const R=6371,r=x=>x*Math.PI/180,dl=r(b.lat-a.lat),dn=r(b.lon-a.lon);const h=Math.sin(dl/2)**2+Math.cos(r(a.lat))*Math.cos(r(b.lat))*Math.sin(dn/2)**2;return 2*R*Math.asin(Math.sqrt(h));}
+
+function mapHTML(){const calls=state.calls.filter(c=>c.stages.length);if(!state.mapId&&calls.length)state.mapId=calls[0].id;
+  const c=getCall(state.mapId),pts=c?c.stages.map((s,i)=>s.lat!=null?{lat:s.lat,lon:s.lon,i:i+1,c:STAGES[i].c,t:STAGES[i].t,n:STAGES[i].n,ts:s.ts}:null).filter(Boolean):[];
+  let h=`<h2>Map &amp; location</h2><div class="card"><button class="btn" data-act="locate">Where am I now</button>
+  ${state.here?`<div class="kv"><span>Position</span><b>${state.here.lat.toFixed(5)}, ${state.here.lon.toFixed(5)}</b></div><div class="kv"><span>Checked</span><b>${fmtTime(state.here.ts)}</b></div><p><a href="${gmaps(state.here.lat,state.here.lon)}" target="_blank" rel="noopener">Open my position on Google Maps</a></p>`:state.gps==='off'?'<p class="note">This phone did not give a location. Allow location for this app and try again.</p>':''}</div>`;
+  if(!calls.length)return h+'<div class="card">Calls will show on the map once you log them.</div>';
+  h+=`<div class="card"><label for="mapsel">Call</label><select id="mapsel">${calls.map(x=>`<option value="${x.id}" ${x.id===state.mapId?'selected':''}>${fmtDate(x.stages[0].ts)} ${fmtTime(x.stages[0].ts).slice(0,5)} - ${esc(x.type)}</option>`).join('')}</select>`;
+  if(pts.length){h+='<div style="margin-top:14px">'+mapSVG(pts)+'</div>';let len=0;for(let i=1;i<pts.length;i++)len+=dist(pts[i-1],pts[i]);
+    h+=`<p class="note">Schematic of the stops, not to a street scale. Distance between GPS stops: ${len.toFixed(1)} km.</p>`;
+    h+=pts.map(p=>`<div class="kv"><span>${p.i}. ${p.n}<br><span class="note">${fmtTime(p.ts)}</span></span><b><a href="${gmaps(p.lat,p.lon)}" target="_blank" rel="noopener">${p.lat.toFixed(5)}, ${p.lon.toFixed(5)}</a></b></div>`).join('');}
+  else h+='<p class="note" style="margin-top:12px">No GPS positions were recorded for this call.</p>';
+  return h+'</div>';}
+
+function meHTML(){const u=state.user;
+  return `<h2>My details</h2><div class="card"><label for="m_name">Officer name</label><input id="m_name" value="${esc(u.officer||u.name)}">
+  <label for="m_veh">Vehicle / call sign</label><input id="m_veh" value="${esc(u.vehicle||'')}">
+  <label for="m_io">Information Officer (POPIA)</label><input id="m_io" value="${esc(u.infoOfficer||'')}" placeholder="Name and contact">
+  <label for="m_to">Send reports to (email)</label><input id="m_to" type="email" inputmode="email" value="${esc(u.sendTo||'')}">
+  <button class="btn ok" style="margin-top:14px" data-act="saveMe">Save</button></div>
+  <div class="card"><div class="note">Logged in as ${esc(u.email)}</div>
+  ${state.confirmOut?'<p>Log out of this phone? Your calls stay safe in the database.</p><div class="row"><button class="btn alt" data-act="logout0">No, stay</button><button class="btn" data-act="logout">Yes, log out</button></div>':'<button class="btn alt" style="margin-top:10px" data-act="logout0">Log out</button>'}</div>
+  <div class="card"><div class="kv"><span>Database</span><b id="dbchip2">Johannesburg</b></div><div class="kv"><span>Last weekly update</span><b>${u.lastWeekly?fmtDate(u.lastWeekly)+' '+fmtTime(u.lastWeekly).slice(0,5):'not yet'}</b></div>
+  <p class="note">Every call is saved to the database as you work. Once every 7 days the app also saves a summary of the week by itself when you open it.</p><button class="btn alt" data-act="weekly">Update now</button></div>
+  <p class="note">${esc(NOTICE)}</p>`;}
+
+function render(){const a=$('#app');
+  if(state.booting)return;
+  if(!state.user){a.innerHTML=authHTML();return}
+  const v={call:homeHTML,history:histHTML,report:reportHTML,map:mapHTML,me:meHTML}[state.view]();
+  a.innerHTML=shell(v);window.scrollTo(0,0);
+  if($('#sig'))initSig();
+  clearInterval(clockTimer);clockTimer=setInterval(()=>{const c=openCall(),el=$('#clock');if(c&&el&&c.stages.length)el.textContent=fmtHMS(Date.now()-c.stages[0].ts)},1000);}
+
+/* ---------- signature pad ---------- */
+function initSig(){const cv=$('#sig');if(!cv)return;const r=cv.getBoundingClientRect(),ratio=window.devicePixelRatio||1;
+  cv.width=r.width*ratio;cv.height=r.height*ratio;const g=cv.getContext('2d');g.scale(ratio,ratio);g.fillStyle='#fff';g.fillRect(0,0,r.width,r.height);
+  g.lineWidth=3;g.lineCap='round';g.lineJoin='round';g.strokeStyle='#111';let down=false;sigDirty=false;
+  const pos=e=>{const b=cv.getBoundingClientRect();return[e.clientX-b.left,e.clientY-b.top]};
+  cv.onpointerdown=e=>{down=true;try{cv.setPointerCapture(e.pointerId)}catch(_){}const[x,y]=pos(e);g.beginPath();g.moveTo(x,y);g.lineTo(x+.1,y);g.stroke();sigDirty=true;e.preventDefault()};
+  cv.onpointermove=e=>{if(!down)return;const[x,y]=pos(e);g.lineTo(x,y);g.stroke();e.preventDefault()};
+  cv.onpointerup=cv.onpointercancel=()=>{down=false};}
+
+/* ---------- stage capture ---------- */
+function openModal(){const s=STAGES[pending.i],c=openCall(),prev=c&&c.stages.length?c.stages[c.stages.length-1].km:null;
+  const m=$('#modal');m.hidden=false;
+  m.innerHTML=`<div class="sheet" style="--c:${s.c};--t:${s.t}"><div class="top">${s.n}</div><div class="in">
+   <div class="kv"><span>Date</span><b>${fmtDate(pending.ts)}</b></div><div class="kv"><span>Time</span><b>${fmtTime(pending.ts)}</b></div>
+   <div class="kv"><span>GPS</span><b id="mgps">locating...</b></div>
+   <div id="pvwrap"><p class="note">Take a photo showing the KM reading and the dashboard.</p></div>
+   <button class="btn alt" data-act="retake">Open camera</button>
+   <label for="kmin" style="margin-top:14px">KM reading${prev!=null?' (last: '+fmtKm(prev)+')':''}</label><input id="kmin" type="number" inputmode="decimal" min="0" step="any">
+   <div class="err" id="merr"></div><div class="row"><button class="btn alt" data-act="cancelStage">Cancel</button><button class="btn ok" data-act="saveStage">Save</button></div></div></div>`;}
+function closeModal(){$('#modal').hidden=true;$('#modal').innerHTML='';pending=null;}
+function updGps(){const e=$('#mgps');if(!e||!pending)return;e.textContent=pending.gps?pending.gps.lat.toFixed(5)+', '+pending.gps.lon.toFixed(5):'not available';}
+
+async function pressStage(i){const c=openCall(),done=c?c.stages.length:0;if(i!==done)return;
+  pending={i,ts:Date.now(),photo:null,gps:null,url:null};openModal();
+  getGPS().then(g=>{if(pending&&pending.i===i){pending.gps=g;updGps();}});
+  const cam=$('#cam');cam.value='';cam.click();}
+
+$('#cam').addEventListener('change',e=>{const f=e.target.files&&e.target.files[0];if(!f||!pending)return;
+  pending.photo=f;if(pending.url)URL.revokeObjectURL(pending.url);pending.url=URL.createObjectURL(f);
+  const w=$('#pvwrap');if(w)w.innerHTML=`<img class="pv" src="${pending.url}" alt="Photo of KM and dashboard">`;});
+
+async function stampPhoto(file,lines){const url=URL.createObjectURL(file);
+  const img=await new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=rej;i.src=url});
+  const sc=Math.min(1,1000/Math.max(img.naturalWidth,img.naturalHeight)),w=Math.round(img.naturalWidth*sc),h=Math.round(img.naturalHeight*sc);
+  const cv=document.createElement('canvas');cv.width=w;cv.height=h;const g=cv.getContext('2d');g.drawImage(img,0,0,w,h);
+  const fs=Math.max(18,Math.round(w/38)),lh=fs*1.3,bh=lh*lines.length+fs*.6;
+  g.fillStyle='rgba(0,0,0,.74)';g.fillRect(0,h-bh,w,bh);g.fillStyle='#fff';g.font='bold '+fs+'px sans-serif';
+  lines.forEach((t,i)=>g.fillText(t,fs*.5,h-bh+fs*.35+lh*(i+1)-lh*.25));
+  URL.revokeObjectURL(url);return{data:cv.toDataURL('image/jpeg',.7),w,h};}
+
+async function saveStage(){const err=$('#merr');if(!pending)return;
+  if(!pending.photo){err.textContent='Please take the photo first.';return}
+  const km=parseFloat($('#kmin').value);if(!isFinite(km)||km<0){err.textContent='Please type the KM reading.';return}
+  let c=openCall();const prev=c&&c.stages.length?c.stages[c.stages.length-1].km:null;
+  if(prev!=null&&km<prev){err.textContent='KM cannot be lower than the last reading ('+fmtKm(prev)+').';return}
+  err.textContent='Saving...';const s=STAGES[pending.i],u=state.user,g=pending.gps||state.here&&Date.now()-state.here.ts<60000&&state.here||null;
+  let ph;try{ph=await stampPhoto(pending.photo,[s.n.toUpperCase()+'   '+fmtDate(pending.ts)+'  '+fmtTime(pending.ts),'KM '+fmtKm(km)+'   '+(u.officer||u.name)+(((c&&c.ob)||state.draftOb)?'   OB '+((c&&c.ob)||state.draftOb):''),g?'GPS '+g.lat.toFixed(5)+', '+g.lon.toFixed(5):'GPS not available'])}
+  catch(e){err.textContent='That photo could not be read. Please retake it.';return}
+  const isNew=!c;
+  if(isNew){c={id:'c'+Date.now(),uid:u.uid,email:u.email,officer:u.officer||u.name,vehicle:u.vehicle||'',type:state.draftType||suggestType(pending.ts),note:state.draftNote||'',ob:state.draftOb||'',stages:[],status:'open',createdAt:pending.ts};state.calls.unshift(c);}
+  const st={k:s.k,ts:pending.ts,km,photo:ph.data,pw:ph.w,ph:ph.h,lat:g?g.lat:null,lon:g?g.lon:null,acc:g?g.acc:null};c.stages.push(st);
+  const b=writeBatch(db);b.set(doc(db,'calls',c.id),strip(c));b.set(doc(db,'calls',c.id,'photos',s.k),{uid:u.uid,data:ph.data,w:ph.w,h:ph.h,ts:pending.ts});
+  track(b.commit()).catch(e=>toast('This stage could not be sent to the database ('+((e&&e.code)||'error')+'). Do not close the app; tell Tim.',9000));
+  state.draftNote='';state.draftType=null;state.draftOb='';closeModal();render();}
+
+/* ---------- documents ---------- */
+function footer(d,w,h){d.setFontSize(8);d.setTextColor(120);const io=state.user.infoOfficer;d.text(POPIA+(io?' Information Officer: '+io+'.':''),w/2,h-7,{align:'center',maxWidth:w-20});}
+function callPDF(c){const{jsPDF}=window.jspdf,d=new jsPDF({unit:'mm',format:'a4'}),m=metrics(c);
+  d.setFillColor(217,45,32);d.rect(0,0,210,22,'F');d.setTextColor(255);d.setFont('helvetica','bold');d.setFontSize(18);d.text('CALL-OUT RECORD',12,14);d.setFontSize(10);d.setFont('helvetica','normal');d.text('Fire Support Call Out Log',198,14,{align:'right'});
+  let y=32;d.setTextColor(30);
+  const kv=(a,b)=>{d.setFont('helvetica','normal');d.setFontSize(11);d.setTextColor(90);d.text(a,12,y);d.setFont('helvetica','bold');d.setTextColor(20);d.text(String(b),70,y,{maxWidth:128});y+=7;};
+  kv('Officer',c.officer);if(c.vehicle)kv('Vehicle / call sign',c.vehicle);kv('Type of call',c.type);kv('Reason',c.note||'-');kv('OB number',c.ob||'-');kv('Date',fmtDate(m.start));y+=3;
+  d.setFillColor(40,32,28);d.rect(12,y-5,186,8,'F');d.setTextColor(255);d.setFont('helvetica','bold');d.setFontSize(10);
+  [['Stage',14],['Time',62],['KM',92],['GPS',116]].forEach(([t,x])=>d.text(t,x,y+.5));y+=9;
+  c.stages.forEach((s,i)=>{d.setTextColor(20);d.setFont('helvetica','normal');d.text(STAGES[i].n,14,y);d.text(fmtTime(s.ts),62,y);d.text(fmtKm(s.km),92,y);d.text(s.lat!=null?s.lat.toFixed(5)+', '+s.lon.toFixed(5):'not available',116,y);y+=7;});
+  y+=4;d.setFillColor(245,240,236);d.rect(12,y-5,186,40,'F');d.setTextColor(20);
+  const t2=(a,b,yy,x)=>{d.setFont('helvetica','normal');d.setFontSize(10);d.setTextColor(90);d.text(a,x,yy);d.setFont('helvetica','bold');d.setFontSize(14);d.setTextColor(20);d.text(b,x,yy+6)};
+  t2('Total KM',fmtKm(m.km),y,16);t2('Total time elapsed',fmtHM(m.el),y,70);t2('Normal hours',fmtHM(m.normal),y,120);t2('Standby / overtime',fmtHM(m.over),y,160);
+  d.setFont('helvetica','normal');d.setFontSize(9);d.setTextColor(90);
+  d.text(m.seg.map((v,i)=>SEGN[i]+': '+fmtHM(v)).join('    '),16,y+24,{maxWidth:178});d.text('Normal hours are 07:30 to 16:00 Mon-Fri; later time, early time and weekends are standby/overtime.',16,y+31,{maxWidth:178});
+  y+=46;
+  if(c.sig){d.setFont('helvetica','bold');d.setFontSize(11);d.setTextColor(20);d.text('Signed',12,y);d.addImage(c.sig,'PNG',12,y+2,60,24);d.setFont('helvetica','normal');d.setFontSize(10);d.text(c.officer+'  -  '+fmtDate(c.signedAt)+' '+fmtTime(c.signedAt),12,y+31);}
+  footer(d,210,297);
+  d.addPage();d.setTextColor(20);d.setFont('helvetica','bold');d.setFontSize(14);d.text('Photos: KM and dashboard',12,16);
+  c.stages.forEach((s,i)=>{const col=i%2,row=Math.floor(i/2),bw=90,bh=72,x=12+col*96,yy=22+row*84,r=Math.min(bw/s.pw,bh/s.ph),w=s.pw*r,h=s.ph*r;
+    d.addImage(s.photo,'JPEG',x,yy,w,h);d.setFont('helvetica','normal');d.setFontSize(9);d.setTextColor(60);d.text(STAGES[i].n+' - '+fmtTime(s.ts),x,yy+bh+4);});
+  footer(d,210,297);return d.output('blob');}
+
+function reportPDF(){const{jsPDF}=window.jspdf,d=new jsPDF({unit:'mm',format:'a4',orientation:'landscape'}),list=monthCalls(),t=monthTotals(list),u=state.user;
+  const cols=[['Date',22],['OB No.',22],['Type',26],['Reason',38],['Out',14],['Scene',14],['Depart',14],['Base',14],['Avail',14],['KM',16],['Total',20],['Normal',20],['Overtime',22]];
+  const head=()=>{d.setFillColor(217,45,32);d.rect(0,0,297,20,'F');d.setTextColor(255);d.setFont('helvetica','bold');d.setFontSize(16);d.text('MONTH-END CALL REPORT',10,13);d.setFontSize(10);d.setFont('helvetica','normal');d.text(monthName(state.month)+'  -  '+(u.officer||u.name)+(u.vehicle?'  -  '+u.vehicle:''),287,13,{align:'right'});};
+  const th=y=>{d.setFillColor(40,32,28);d.rect(10,y-5,277,8,'F');d.setTextColor(255);d.setFont('helvetica','bold');d.setFontSize(9);let x=11;cols.forEach(([n,w])=>{d.text(n,x,y);x+=w+1});};
+  head();let y=30;d.setTextColor(20);d.setFont('helvetica','bold');d.setFontSize(11);
+  d.text(`Calls: ${list.length}     Total KM: ${fmtKm(t.km)}     Total time: ${fmtHM(t.el)}     Normal hours: ${fmtHM(t.n)}     Overtime: ${fmtHM(t.o)}`,10,y);y+=10;th(y);y+=8;
+  d.setFont('helvetica','normal');d.setFontSize(9);
+  const tr=s=>{s=String(s);return s.length>24?s.slice(0,23)+'...':s};
+  list.forEach((c,ix)=>{if(y>192){footer(d,297,210);d.addPage();head();y=30;th(y);y+=8;d.setFont('helvetica','normal');d.setFontSize(9)}
+    const m=metrics(c),row=[fmtDate(m.start),tr(c.ob||'-'),c.type,tr(c.note||'-')].concat(c.stages.map(s=>fmtTime(s.ts).slice(0,5)),[fmtKm(m.km),fmtHM(m.el),fmtHM(m.normal),fmtHM(m.over)]);
+    if(ix%2===0){d.setFillColor(246,241,237);d.rect(10,y-4.5,277,7,'F')}
+    d.setTextColor(20);let x=11;row.forEach((v,i)=>{d.text(String(v),x,y);x+=cols[i][1]+1});y+=7;});
+  if(y>192){footer(d,297,210);d.addPage();head();y=30}
+  d.setFont('helvetica','bold');d.setFillColor(40,32,28);d.rect(10,y-4.5,277,8,'F');d.setTextColor(255);
+  let x=11;['TOTALS','','','','','','','','',fmtKm(t.km),fmtHM(t.el),fmtHM(t.n),fmtHM(t.o)].forEach((v,i)=>{d.text(v,x,y+.5);x+=cols[i][1]+1});
+  y+=16;d.setTextColor(60);d.setFont('helvetica','normal');d.setFontSize(9);d.text('Normal hours are 07:30 to 16:00 Mon-Fri. Time from 16:00, before 07:30 and on weekends is standby/overtime.',10,y);
+  d.setTextColor(20);d.setFontSize(10);d.text('Officer signature: ______________________________        Date: ______________',10,y+14);
+  footer(d,297,210);return d.output('blob');}
+
+function makeCard(title,sub,rows){return new Promise(res=>{const W=1080,rh=84,H=250+rows.length*rh+120,cv=document.createElement('canvas');cv.width=W;cv.height=H;const g=cv.getContext('2d');
+  g.fillStyle='#14100e';g.fillRect(0,0,W,H);g.fillStyle='#e8401f';g.fillRect(0,0,W,120);
+  g.fillStyle='#fff';g.font='700 46px sans-serif';g.fillText('FIRE SUPPORT CALL OUT LOG',40,78);
+  g.fillStyle='#f6efe9';g.font='700 52px sans-serif';g.fillText(title,40,190);g.fillStyle='#b9a99e';g.font='34px sans-serif';g.fillText(sub,40,235);
+  rows.forEach((r,i)=>{const y=260+i*rh;g.fillStyle=i%2?'#221a16':'#2d231e';g.fillRect(30,y,W-60,rh-6);g.fillStyle='#b9a99e';g.font='34px sans-serif';g.fillText(r[0],50,y+52);g.fillStyle='#f7b500';g.font='700 38px sans-serif';g.textAlign='right';g.fillText(r[1],W-50,y+52);g.textAlign='left';});
+  cv.toBlob(b=>res(b),'image/png');});}
+
+/* ---------- save / share ---------- */
+async function saveFile(blob,filename){let cap=null;try{cap=window.claude&&window.claude.use?await window.claude.use('downloads'):null}catch(e){}
+  if(cap){try{await cap.save({filename,data:blob});return true}catch(e){if(e&&e.code==='declined')return false}}
+  try{const u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000);return true}catch(e){return false}}
+async function deliver(blob,filename,mode,subject,body){
+  if(mode!=='save'){try{const f=new File([blob],filename,{type:blob.type});if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f],title:subject,text:body});return}}catch(e){if(e&&e.name==='AbortError')return}}
+  const ok=await saveFile(blob,filename);
+  if(ok&&mode==='email'){const to=state.user.sendTo||'';const a=document.createElement('a');a.href='mailto:'+encodeURIComponent(to).replace('%40','@')+'?subject='+encodeURIComponent(subject)+'&body='+encodeURIComponent(body+'\n\n(Attach the saved file '+filename+')');document.body.appendChild(a);a.click();a.remove();toast('Saved. Attach '+filename+' to the email that opens'+(to?'':' (add the address)')+'.',7000);}
+  else if(ok)toast('Saved: '+filename);}
+
+const cname=c=>'Call_'+new Date(c.stages[0].ts).toISOString().slice(0,10)+'_'+pad(new Date(c.stages[0].ts).getHours())+pad(new Date(c.stages[0].ts).getMinutes());
+async function callAction(id,mode){const c=getCall(id);if(!c)return;if(!window.jspdf&&mode!=='pic'){toast('PDF tool is still loading. Try again in a moment.');return}
+  if(mode!=='pic'){try{await ensurePhotos(c)}catch(e){toast('The photos could not be loaded. Check your signal and try again.',6000);return}}
+  const m=metrics(c),subj='Call-out record '+fmtDate(m.start)+' - '+c.type,body='Call-out record, '+c.type+', '+fmtDate(m.start)+'. Total '+fmtKm(m.km)+' km, '+fmtHM(m.el)+'.';
+  if(mode==='pic'){const b=await makeCard(c.type,fmtDate(m.start)+(c.ob?'  -  OB '+c.ob:'')+(c.note?'  -  '+c.note:''),[['Call-out',fmtTime(c.stages[0].ts)],['On scene',fmtTime(c.stages[1].ts)],['Departing',fmtTime(c.stages[2].ts)],['Back at base',fmtTime(c.stages[3].ts)],['Available',fmtTime(c.stages[4].ts)],['Total KM',fmtKm(m.km)],['Total time',fmtHM(m.el)]]);return deliver(b,cname(c)+'.png','picture',subj,body)}
+  try{return await deliver(callPDF(c),cname(c)+'.pdf',mode==='email'?'email':'save',subj,body)}catch(e){toast('Could not make the PDF.')}}
+async function reportAction(mode){const list=monthCalls();if(!list.length||!window.jspdf)return;const t=monthTotals(list),subj='Month-end call report - '+monthName(state.month),body=subj+'. Calls: '+list.length+', total '+fmtKm(t.km)+' km, '+fmtHM(t.el)+', overtime '+fmtHM(t.o)+'.';
+  if(mode==='pic'){const b=await makeCard(monthName(state.month),(state.user.officer||state.user.name),[['Calls',String(list.length)],['Total KM',fmtKm(t.km)],['Total time',fmtHM(t.el)],['Normal hours',fmtHM(t.n)],['Overtime',fmtHM(t.o)]]);return deliver(b,'Report_'+state.month+'.png','picture',subj,body)}
+  try{return await deliver(reportPDF(),'Report_'+state.month+'.pdf',mode==='email'?'email':'save',subj,body)}catch(e){toast('Could not make the PDF.')}}
+
+/* ---------- actions ---------- */
+function authMsg(e){const c=(e&&e.code)||'';
+  if(c==='auth/email-already-in-use')return'That email already has a login. Use Log in.';
+  if(c==='auth/invalid-credential'||c==='auth/wrong-password'||c==='auth/user-not-found'||c==='auth/invalid-login-credentials')return'Email or password is not right.';
+  if(c==='auth/weak-password')return'Password must be at least 6 characters.';
+  if(c==='auth/network-request-failed')return'No signal. Please connect and try again.';
+  if(c==='auth/too-many-requests')return'Too many tries. Please wait a few minutes.';
+  return'Could not log in ('+(c||'error')+').';}
+async function doAuth(){const em=($('#a_email').value||'').trim().toLowerCase(),pw=$('#a_pw').value||'',reg=state.authMode==='register';
+  const fail=m=>{state.authErr=m;$('#autherr').textContent=m};
+  if(!/^\S+@\S+\.\S+$/.test(em))return fail('Please type a valid email address.');if(pw.length<6)return fail('Password must be at least 6 characters.');
+  $('#autherr').textContent='Please wait...';
+  try{
+    if(reg){const nm=($('#a_name').value||'').trim();if(!nm)return fail('Please type your name.');if(pw!==$('#a_pw2').value)return fail('The two passwords do not match.');if(!$('#a_ok').checked)return fail('Please tick the box to accept the privacy notice.');
+      state.regName=nm;await createUserWithEmailAndPassword(auth,em,pw);}
+    else await signInWithEmailAndPassword(auth,em,pw);
+    state.authErr='';
+  }catch(e){fail(authMsg(e))}}
+async function forgot(){const em=($('#a_email')&&$('#a_email').value||'').trim().toLowerCase();
+  if(!/^\S+@\S+\.\S+$/.test(em)){state.authErr='Type your email above first, then tap Forgot password.';$('#autherr').textContent=state.authErr;return}
+  try{await sendPasswordResetEmail(auth,em)}catch(e){}
+  toast('If that email has a login, a reset link has been sent to it.',7000);}
+async function enterApp(fu){let prof=null;const ref=doc(db,'profiles',fu.uid);
+  try{const sn=await getDoc(ref);if(sn.exists())prof=sn.data()}catch(e){}
+  if(!prof){prof={uid:fu.uid,email:fu.email,name:state.regName||(fu.email||'').split('@')[0],officer:state.regName||(fu.email||'').split('@')[0],vehicle:'',sendTo:'',infoOfficer:'',consentAt:Date.now(),createdAt:Date.now(),lastWeekly:0};
+    setDoc(ref,prof).catch(()=>{});}
+  state.user=Object.assign({},prof,{uid:fu.uid,email:fu.email});
+  try{await loadCalls()}catch(e){state.calls=[]}
+  state.booting=false;state.view='call';render();
+  weeklyUpdate(false).catch(()=>{});}
+
+document.addEventListener('click',async e=>{const b=e.target.closest('[data-act]');if(!b)return;const a=b.dataset.act;if(b.tagName==='A')e.preventDefault();
+  switch(a){
+   case'toggleAuth':state.authMode=state.authMode==='login'?'register':'login';state.authErr='';render();break;
+   case'doAuth':doAuth();break;
+   case'tab':state.view=b.dataset.v;state.confirmOut=false;render();break;
+   case'stage':pressStage(+b.dataset.i);break;
+   case'retake':{const c=$('#cam');c.value='';c.click();break}
+   case'cancelStage':closeModal();break;
+   case'saveStage':saveStage();break;
+   case'clearSig':initSig();break;
+   case'closeCall':{const c=openCall();if(!c)break;if(!sigDirty){$('#sigerr').textContent='Please sign in the white box first.';break}
+     const nm=($('#sname').value||'').trim()||c.officer;const ob=$('#cob')?$('#cob').value.trim():c.ob;c.officer=nm;c.ob=ob;c.sig=$('#sig').toDataURL('image/png');c.signedAt=Date.now();c.status='closed';
+     track(setDoc(doc(db,'calls',c.id),strip(c))).catch(e=>toast('The signed call could not be sent to the database ('+((e&&e.code)||'error')+').',9000));state.closed=c.id;render();toast('Call signed and closed.');break}
+   case'newCall':state.closed=null;render();break;
+   case'pdf':callAction(b.dataset.id,'save');break;
+   case'email':callAction(b.dataset.id,'email');break;
+   case'pic':callAction(b.dataset.id,'pic');break;
+   case'rpdf':reportAction('save');break;
+   case'remail':reportAction('email');break;
+   case'rpic':reportAction('pic');break;
+   case'showmap':state.mapId=b.dataset.id;state.view='map';render();break;
+   case'locate':b.textContent='Locating...';await getGPS();render();break;
+   case'saveMe':{const u=state.user;u.officer=$('#m_name').value.trim()||u.name;u.vehicle=$('#m_veh').value.trim();u.sendTo=$('#m_to').value.trim();u.infoOfficer=$('#m_io').value.trim();setDoc(doc(db,'profiles',u.uid),{officer:u.officer,vehicle:u.vehicle,sendTo:u.sendTo,infoOfficer:u.infoOfficer},{merge:true}).catch(()=>toast('Could not save your details.'));toast('Saved.');render();break}
+   case'weekly':{b.textContent='Updating...';const ok=await weeklyUpdate(true);toast(ok?'Weekly update saved to the database.':'Could not save the weekly update. Check your signal.');render();break}
+   case'forgot':forgot();break;
+   case'logout0':state.confirmOut=!state.confirmOut;render();break;
+   case'logout':state.confirmOut=false;try{await signOut(auth)}catch(e){}break;
+  }});
+document.addEventListener('input',e=>{const t=e.target;if(t.id==='ctype')state.draftType=t.value;if(t.id==='cnote')state.draftNote=t.value;if(t.id==='cob'&&!openCall())state.draftOb=t.value;});
+document.addEventListener('change',e=>{const t=e.target;if(t.id==='ctype')state.draftType=t.value;
+  if(t.id==='cob'){const c=openCall();if(c){c.ob=t.value.trim();track(setDoc(doc(db,'calls',c.id),{ob:c.ob},{merge:true})).catch(()=>toast('OB number could not be saved. Check your signal.'))}else state.draftOb=t.value.trim()}
+  if(t.id==='mon'&&t.value){state.month=t.value;render()}if(t.id==='mapsel'){state.mapId=t.value;render()}});
+
+/* ---------- boot ---------- */
+onAuthStateChanged(auth,fu=>{if(fu){enterApp(fu)}else{state.user=null;state.calls=[];state.booting=false;render()}});
+if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))}
+})();
+</script>
+</body>
+</html>
