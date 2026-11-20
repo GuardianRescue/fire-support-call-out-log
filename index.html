@@ -31,6 +31,7 @@ button,input,select{font:inherit;color:inherit;-webkit-appearance:none;appearanc
 select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='12'%3E%3Cpath d='M2 2l8 8 8-8' fill='none' stroke='%23b9a99e' stroke-width='3'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:46px}
 header{display:flex;align-items:center;gap:12px;padding:14px 0 12px}
 header .logo{width:54px;height:54px;display:grid;place-items:center;flex:none}
+header .outbtn{margin-left:auto;flex:none;min-height:48px;padding:0 16px;border-radius:12px;border:2px solid #6b5a52;background:#2a211e;color:#fff;font:700 16px var(--display,inherit);letter-spacing:.05em;text-transform:uppercase}
 header h1{font:700 clamp(24px,7.4vw,32px)/1.05 var(--display);letter-spacing:.06em;text-transform:uppercase;margin:0}
 header small{display:block;color:var(--muted);font-size:16px}
 .hazard{height:10px;border-radius:2px;background:repeating-linear-gradient(45deg,#f7b500 0 14px,#14100e 14px 28px);margin-bottom:16px}
@@ -192,7 +193,7 @@ const IC={
  me:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-5 5-6 8-6s7 1 8 6"/></svg>'};
 
 /* ---------- views ---------- */
-function shell(inner){return `<header><div class="logo">${FLAME}</div><div><h1>Fire Support<br>Call Out Log</h1><small>${esc(state.user.officer||state.user.name)}${state.user.man?' &middot; '+esc(state.user.man):''}${state.user.vehicle?' &middot; '+esc(state.user.vehicle):''}</small></div></header><div class="hazard"></div>${inner}
+function shell(inner){return `<header><div class="logo">${FLAME}</div><div><h1>Fire Support<br>Call Out Log</h1><small>${esc(state.user.officer||state.user.name)}${state.user.man?' &middot; '+esc(state.user.man):''}${state.user.vehicle?' &middot; '+esc(state.user.vehicle):''}</small></div><button class="outbtn" data-act="logout0">Log out</button></header>${state.confirmOut?'<div class="card" style="border-color:var(--red,#e8401f)"><p style="font-size:20px">Log out of this phone? Your calls stay safe in the database.</p><div class="row"><button class="btn alt" data-act="logout0">No, stay</button><button class="btn" data-act="logout">Yes, log out</button></div></div>':''}<div class="hazard"></div>${inner}
 <nav class="tabs">${[['call','Call'],['history','History'],['report','Report'],['map','Map'],['me','Me']].map(([v,l])=>`<button data-act="tab" data-v="${v}" class="${state.view===v?'on':''}">${IC[{call:'call',history:'hist',report:'rep',map:'map',me:'me'}[v]]}${l}</button>`).join('')}</nav>`;}
 
 function authHTML(){const reg=state.authMode==='register';
@@ -283,7 +284,7 @@ function meHTML(){const u=state.user;
   <label for="m_to">Send reports to (email)</label><input id="m_to" type="email" inputmode="email" value="${esc(u.sendTo||'')}">
   <button class="btn ok" style="margin-top:14px" data-act="saveMe">Save</button></div>
   <div class="card"><div class="note">Logged in as ${esc(u.email)}</div>
-  ${state.confirmOut?'<p>Log out of this phone? Your calls stay safe in the database.</p><div class="row"><button class="btn alt" data-act="logout0">No, stay</button><button class="btn" data-act="logout">Yes, log out</button></div>':'<button class="btn alt" style="margin-top:10px" data-act="logout0">Log out</button>'}</div>
+  </div>
   <div class="card"><div class="kv"><span>Database</span><b id="dbchip2">Johannesburg</b></div><div class="kv"><span>Last weekly update</span><b>${u.lastWeekly?fmtDate(u.lastWeekly)+' '+fmtTime(u.lastWeekly).slice(0,5):'not yet'}</b></div>
   <p class="note">Every call is saved to the database as you work. Once every 7 days the app also saves a summary of the week by itself when you open it.</p><button class="btn alt" data-act="weekly">Update now</button></div>
   <p class="note">${esc(NOTICE)}</p>`;}
