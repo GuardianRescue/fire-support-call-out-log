@@ -204,8 +204,7 @@ function authHTML(){const reg=state.authMode==='register';
   <div class="err" id="autherr">${esc(state.authErr)}</div>
   <button class="btn" data-act="doAuth">${reg?'Create my login':'Log in'}</button>
   ${reg?'':'<p style="text-align:center"><a href="#" data-act="forgot" data-link="1">Forgot password</a></p>'}<p style="text-align:center"><a href="#" data-act="toggleAuth">${reg?'I already have a login':'Create a new login'}</a></p></div>
-  <div class="card"><div class="kv"><span>Database</span><b id="dbchip2">Johannesburg</b></div><div class="kv"><span>Last weekly update</span><b>${u.lastWeekly?fmtDate(u.lastWeekly)+' '+fmtTime(u.lastWeekly).slice(0,5):'not yet'}</b></div>
-  <p class="note">Every call is saved to the database as you work. Once every 7 days the app also saves a summary of the week by itself when you open it.</p><button class="btn alt" data-act="weekly">Update now</button></div>
+  <p class="note" style="text-align:center">Your call-outs are saved to a secure database in Johannesburg. Only you can see your own records.</p>
   <p class="note">${esc(NOTICE)}</p>`;}
 
 function summaryHTML(c){const m=metrics(c);if(!m)return'';
